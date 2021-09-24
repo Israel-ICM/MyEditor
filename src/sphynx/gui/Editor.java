@@ -1,7 +1,11 @@
 package sphynx.gui;
 
 import java.awt.Color;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.input.KeyCode;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -12,6 +16,7 @@ import javax.swing.text.TabSet;
 import javax.swing.text.TabStop;
 import sphynx.tools.CustomFont;
 import sphynx.tools.NumeroLinea;
+import sphynx.tools.ToolsEditor;
 
 /**
  * @author Israel-ICM
@@ -35,19 +40,35 @@ public class Editor extends javax.swing.JFrame {
             arrTabs[i] = new TabStop((i + 1) * 30, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
         AttributeSet paraSet = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.TabSet, new TabSet(arrTabs));
         txtContentEditor.setParagraphAttributes(paraSet, false);
+        
+        txtContentEditor.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+                // System.out.println("aqui esta: " + e.getMark());
+            }
+        });
     }
     
+    /**
+     * Inyecta texto en el lugar donde se encuentra el cursor
+     * @param text Texto completo del input
+     */
     public void inyectarTexto(String text) {
-        inyectarTexto(text, false);
+        inyectarTexto(text, 0);
     }
-    public void inyectarTexto(String text, boolean isEnter) {
-        String contenido = txtContentEditor.getText().substring(0, txtContentEditor.getCaretPosition()) + text + txtContentEditor.getText().substring(txtContentEditor.getCaretPosition());
-        txtContentEditor.setText(contenido);
-
-        int espaciosRecorrerCursor = -1;
-        if (isEnter)
-            espaciosRecorrerCursor = -2;
-        txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + espaciosRecorrerCursor);
+    /**
+     * Inyecta texto en el lugar donde se encuentra el cursor
+     * @param text Texto completo del input
+     * @param recorrerCursorIzquierda Cuantos caracteres se recorrera el cursor a la izquierda
+     */
+    public void inyectarTexto(String text, int recorrerCursorIzquierda) {
+        try {
+            txtContentEditor.getStyledDocument().insertString(txtContentEditor.getCaretPosition(), text, null);
+            int espaciosRecorrerCursor = -(1 + recorrerCursorIzquierda);
+            txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + espaciosRecorrerCursor);
+        } catch (BadLocationException ex) {
+            System.out.println("inyectarTexto(): " + ex.getMessage());
+        }
     }
     
     /**
@@ -178,32 +199,89 @@ public class Editor extends javax.swing.JFrame {
 
     private void txtContentEditorKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtContentEditorKeyPressed
         if (evt.getKeyCode() == 10) {
-            if (txtContentEditor.getText().charAt(txtContentEditor.getCaretPosition() - 1) == '{' && txtContentEditor.getText().charAt(txtContentEditor.getCaretPosition()) == '}') {
-                /*String contenido = txtContentEditor.getText().substring(0, txtContentEditor.getCaretPosition()) + "\n\t\n" + txtContentEditor.getText().substring(txtContentEditor.getCaretPosition());
-                txtContentEditor.setText(contenido);
-                txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() - 2);*/
-                inyectarTexto("\n\t\n", true);
-                evt.consume();
+            int numTabs = ToolsEditor.getCantidadTabsLinea(txtContentEditor.getText(), txtContentEditor.getCaretPosition());
+            String tabs = ToolsEditor.repeatText("\t", numTabs);
+
+            // Hay que eliminar los saltos para hacer un correcto calculo de la posición del cursor
+            String textSinSaltos = txtContentEditor.getText().replaceAll("\n", "");
+            if (txtContentEditor.getText().length() > 0) {
+                if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '{' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == '}') {
+                    inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
+                    evt.consume();
+                }
+                else if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '[' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == ']') {
+                    inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
+                    evt.consume();
+                }
+                /*else { // Si el enter se dá en un lugar que no sea al medio de un caracter de apertura y cierre
+                    // if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '\t')
+                    System.out.println("llega ver: " + numTabs);
+                    inyectarTexto("\n" + tabs, -numTabs);
+                    evt.consume();
+                }*/
             }
         }
     }//GEN-LAST:event_txtContentEditorKeyPressed
 
     private void txtContentEditorKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtContentEditorKeyTyped
-        if (evt.getKeyChar() == '{') {
-            /*txtContentEditor.setText(txtContentEditor.getText() + "{}");
-            txtContentEditor.setCaretPosition(txtContentEditor.getText().length() - 1);*/
-            inyectarTexto("{}");
-            evt.consume();
+        String text = txtContentEditor.getText().replaceAll("\n", "");
+        if (text.length() > 0) {
+            try {
+                if (evt.getKeyChar() == ']' && text.charAt(txtContentEditor.getCaretPosition() - 1) == '[') {
+                    txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + 1);
+                    evt.consume();
+                    return;
+                }
+                else if (evt.getKeyChar() == ')' && text.charAt(txtContentEditor.getCaretPosition() - 1) == '(') {
+                    txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + 1);
+                    evt.consume();
+                    return;
+                }
+                else if (evt.getKeyChar() == '}' && text.charAt(txtContentEditor.getCaretPosition() - 1) == '{') {
+                    txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + 1);
+                    evt.consume();
+                    return;
+                }
+                else if (evt.getKeyChar() == '\'' && text.charAt(txtContentEditor.getCaretPosition() - 1) == '\'' && text.charAt(txtContentEditor.getCaretPosition()) == '\'') {
+                    txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + 1);
+                    evt.consume();
+                    return;
+                }
+                else if (evt.getKeyChar() == '"' && text.charAt(txtContentEditor.getCaretPosition() - 1) == '"' && text.charAt(txtContentEditor.getCaretPosition()) == '"') {
+                    txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + 1);
+                    evt.consume();
+                    return;
+                }
+            }
+            catch(Exception e) {
+                // Este catch se hizo principalmente para las comillas por que su validacion en algunos casos son índices fuera de rango
+            }
         }
-        if (evt.getKeyChar() == '(') {
-            // txtContentEditor.setText(txtContentEditor.getText() + "()");
-            inyectarTexto("()");
-            /*String contenido = txtContentEditor.getText().substring(0, txtContentEditor.getCaretPosition()) + "()" + txtContentEditor.getText().substring(txtContentEditor.getCaretPosition());
-            txtContentEditor.setText(contenido);
-            // txtContentEditor.setCaretPosition(txtContentEditor.getText().length() - 1);
-            txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() - 1);*/
-            evt.consume();
-        }
+        
+        switch (evt.getKeyChar()) {
+            case '{':
+                inyectarTexto("{}");
+                evt.consume();
+                break;
+            case '(':
+                inyectarTexto("()");
+                evt.consume();
+                break;
+            case '[':
+                inyectarTexto("[]");
+                evt.consume();
+                break;
+            case '\'':
+                inyectarTexto("''");
+                evt.consume();
+                break;
+            case '\"':
+                inyectarTexto("\"\"");
+                evt.consume();
+                break;
+            default:
+                break;
+        }        
     }//GEN-LAST:event_txtContentEditorKeyTyped
 
     /**
