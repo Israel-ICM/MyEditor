@@ -6,6 +6,24 @@ package sphynx.tools;
  */
 public class ToolsEditor {
     /**
+     * Verifica si el cursor 
+     * @param text
+     * @param indexCursorPosition
+     * @return 
+     */
+    public boolean esComentario(String text, int indexCursorPosition) {
+        int indexHaciaAtras = indexCursorPosition;
+        int indexHaciaAdelante = indexCursorPosition;
+        while (indexHaciaAtras >= 0) {
+            if (text.charAt(indexHaciaAtras) == '/' && text.charAt(indexHaciaAtras - 1) == '*') // Si encontramos */
+                return false;
+            if (text.charAt(indexHaciaAtras) == '*' && text.charAt(indexHaciaAtras - 1) == '*') // Si encontramos /*
+                return true;
+            indexHaciaAtras--;
+        }
+        return false;
+    }
+    /**
      * Retorna la cantidad de tabuladores que existe en la linea definida
      * @param text
      * @param indexCursorPosition
@@ -15,7 +33,7 @@ public class ToolsEditor {
         boolean finInicioFila = false;
         int tabs = 0;
         if (getCantidadLineas(text) > 1) {
-            while (!finInicioFila) {
+            while (!finInicioFila && indexCursorPosition > -1) {
                 if (text.charAt(indexCursorPosition) == '\n')
                     finInicioFila = true;
                 if (text.charAt(indexCursorPosition) == '\t')

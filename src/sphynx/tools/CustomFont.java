@@ -1,7 +1,9 @@
 package sphynx.tools;
 
 import java.awt.Font;
+import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 /**
  * @author Israel-ICM
@@ -10,9 +12,10 @@ public class CustomFont {
     private Font font = null;
 
     public CustomFont() {
-        String fontName = "UbuntuMono.ttf" ;
+        String fontName = "src/sphynx/fonts/InconsolataLight.ttf" ;
         try {
-            InputStream is =  getClass().getResourceAsStream(fontName);
+            InputStream is = Files.newInputStream(new File(fontName).toPath());
+            // InputStream is =  getClass().getResourceAsStream(fontName);
             font = Font.createFont(Font.TRUETYPE_FONT, is);
         } catch (Exception ex) {
             //Si existe un error se carga fuente por defecto ARIAL
