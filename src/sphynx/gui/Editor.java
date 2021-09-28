@@ -10,9 +10,9 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.TabSet;
 import javax.swing.text.TabStop;
+import sphynx.styleDocuments.DefaultStyleDocumentPHP;
 import sphynx.tools.CustomFont;
 import sphynx.tools.NumeroLinea;
-import sphynx.tools.TextMarkerPHP;
 import sphynx.tools.ToolsEditor;
 
 /**
@@ -28,7 +28,7 @@ public class Editor extends javax.swing.JFrame {
         
         CustomFont cf = new CustomFont();
         txtContentEditor.setFont(cf.ubuntuMonoSpace(1, 14f));
-        new TextMarkerPHP().initMarker(txtContentEditor);
+        txtContentEditor.setDocument(new DefaultStyleDocumentPHP());
         
         // Lo siguiente es un auxiliar para que el tabulador tenga un espacio pequeño (En este caso 30, para cada espacio)
         StyleContext sc = StyleContext.getDefaultStyleContext();
