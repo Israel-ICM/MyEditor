@@ -5,6 +5,14 @@ package sphynx.tools;
  * @author Israel-ICM
  */
 public class ToolsEditor {
+    public static boolean existComment(String text) {
+        if (text.contains("/*") && !text.contains("\"/*\""))
+            return true;
+        else if (text.contains("//") && !text.contains("\"//\""))
+            return true;
+        else
+            return false;
+    }
     public static int getIndexInicioPalabra(String texto, int indexDesde) {
         while (texto.length() > 0 && indexDesde >= 0) {
             // Si hay un espacio, tabulador o salto de linea entonces se toma como fin de la palabra

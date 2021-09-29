@@ -104,26 +104,28 @@ public class Editor extends javax.swing.JFrame {
 
     private void txtContentEditorKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtContentEditorKeyPressed
         if (evt.getKeyCode() == 10) {
-            int numTabs = ToolsEditor.getCantidadTabsLinea(txtContentEditor.getText(), txtContentEditor.getCaretPosition());
-            String tabs = ToolsEditor.repeatText("\t", numTabs);
+            if (txtContentEditor.getCaretPosition() > 0) {
+                int numTabs = ToolsEditor.getCantidadTabsLinea(txtContentEditor.getText(), txtContentEditor.getCaretPosition());
+                String tabs = ToolsEditor.repeatText("\t", numTabs);
 
-            // Hay que eliminar los saltos para hacer un correcto calculo de la posición del cursor
-            String textSinSaltos = txtContentEditor.getText().replaceAll("\n", "");
-            if (txtContentEditor.getText().length() > 0) {
-                if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '{' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == '}') {
-                    inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
-                    evt.consume();
+                // Hay que eliminar los saltos para hacer un correcto calculo de la posición del cursor
+                String textSinSaltos = txtContentEditor.getText().replaceAll("\n", "");
+                if (txtContentEditor.getText().length() > 0) {
+                    if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '{' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == '}') {
+                        inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
+                        evt.consume();
+                    }
+                    else if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '[' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == ']') {
+                        inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
+                        evt.consume();
+                    }
+                    /*else { // Si el enter se dá en un lugar que no sea al medio de un caracter de apertura y cierre
+                        // if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '\t')
+                        System.out.println("llega ver: " + numTabs);
+                        inyectarTexto("\n" + tabs, -numTabs);
+                        evt.consume();
+                    }*/
                 }
-                else if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '[' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == ']') {
-                    inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
-                    evt.consume();
-                }
-                /*else { // Si el enter se dá en un lugar que no sea al medio de un caracter de apertura y cierre
-                    // if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '\t')
-                    System.out.println("llega ver: " + numTabs);
-                    inyectarTexto("\n" + tabs, -numTabs);
-                    evt.consume();
-                }*/
             }
         }
     }//GEN-LAST:event_txtContentEditorKeyPressed
