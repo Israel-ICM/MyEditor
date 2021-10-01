@@ -84,14 +84,18 @@ public class ToolsEditor {
         }
         return text.length();
     }
+    
+    public static int getCantidadTabsLinea(String text, int indexCursorPosition) {
+        return getCantidadTabsLinea(text, indexCursorPosition, false);
+    }
     /**
      * Retorna la cantidad de tabuladores que existe en la linea definida
      * @param text
      * @param indexCursorPosition
      * @return 
      */
-    public static int getCantidadTabsLinea(String text, int indexCursorPosition) {
-        boolean finInicioFila = false;
+    public static int getCantidadTabsLinea(String text, int indexCursorPosition, boolean estoBorrar) {
+        /*boolean finInicioFila = false;
         int tabs = 0;
         if (getCantidadLineas(text) > 1) {
             while (!finInicioFila && indexCursorPosition > -1) {
@@ -102,7 +106,27 @@ public class ToolsEditor {
                 indexCursorPosition--;
             }
         }
-        return tabs;
+        else {*/
+        int total = 0;
+        if (text.length() > 0) {
+            
+            //String aux = "";
+                // aux = text.substring(0, indexCursorPosition + 1);
+            try {
+                while (indexCursorPosition >= 0) {
+    /*                if (estoBorrar)
+                        System.out.println("revisar: \n" + text);*/
+                    if (text.charAt(indexCursorPosition) == '\t')
+                        total++;
+                    if (text.charAt(indexCursorPosition) == '\t' && text.charAt(indexCursorPosition - 1) != '\t')
+                        return total;
+                    indexCursorPosition--;
+                }
+            }
+            catch (Exception e) { }
+        }
+        // }
+        return total;
     }
     /**
      * Retorna la cantidad de lineas de un texto

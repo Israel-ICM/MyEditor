@@ -17,16 +17,17 @@ public class DefaultStyleDocumentPHP extends DefaultStyledDocument{
     // final String palabras = "";
     final String methodClass = "public|private|class|extends|implements|static|abstract|interface|function";
     final String imports = "require|require_once|include|include_once";
-    final String condicionales = "if|else|elseif|foreach|for|while|return|true|false|null|new|throw|as|=>";
-    final String tipoDatos = "int|float|bool|object|stdClass|string|void|&&";
+    final String condicionales = "if|else|elseif|foreach|for|while|return|true|false|null|new|throw|as|echo";
+    final String tipoDatos = "int|float|bool|object|stdClass|string|void|var|const";
     final StyleContext styleContext = StyleContext.getDefaultStyleContext();
     // Instanciamos los atributos para los estilos para las palabras normales y las que tienes listadas
     // En este caso Azul para las palabras especiales y negro para las normales
-    final AttributeSet attribMethodClass = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#6803FF"));
+    final AttributeSet attribMethodClass = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#4B0CAA"));
     final AttributeSet attribImports = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#395BBD"));
     final AttributeSet attribCondicionales = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode(/*"#570FEA"*/"#395BBD"));
     final AttributeSet attribTipoDatos = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#B148CE"));
     final AttributeSet attribComentarios = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#908E8E"));
+    final AttributeSet attribString = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#048114"));
     final AttributeSet attribCadenas = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#1E9E51"));
     final AttributeSet attribVariables = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.decode("#7B0407"));
     final AttributeSet attribNormal = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.BLACK);
@@ -228,6 +229,58 @@ public class DefaultStyleDocumentPHP extends DefaultStyledDocument{
                 index++;
         }
     }
+    private void estilizarCodigoStrings(int indexCursor) throws BadLocationException {
+        String textoCompleto = getText(0, getLength());
+        int index = 0;
+        String textoAVerificar = textoCompleto;
+        while (index < textoCompleto.length()) {
+            if (textoAVerificar.contains("\"")) {
+                index += textoAVerificar.indexOf("\"");
+                textoAVerificar = textoCompleto.substring(index + 1);
+
+                int inicio = index;
+                int fin = textoCompleto.length() - 1;
+                if (textoAVerificar.contains("\"")) {
+                    index += textoAVerificar.indexOf("\"") + 2; // Se suma 2 por los caracteres */
+                    fin = index;
+                    textoAVerificar = textoCompleto.substring(index);
+                }
+                else {
+                    fin = fin + 1;
+                    index = fin;
+                }
+                // System.out.println("verificar(" + inicio + ", " + fin + ") => " + textoCompleto.substring(inicio, fin));
+                setStyleStrings(inicio, fin, indexCursor);
+            }
+            else
+                index++;
+        }
+
+        index = 0;
+        textoAVerificar = textoCompleto;
+        while (index < textoCompleto.length()) {
+            if (textoAVerificar.contains("'")) {
+                index += textoAVerificar.indexOf("'");
+                textoAVerificar = textoCompleto.substring(index + 1);
+
+                int inicio = index;
+                int fin = textoCompleto.length() - 1;
+                if (textoAVerificar.contains("'")) {
+                    index += textoAVerificar.indexOf("'") + 2; // Se suma 2 por los caracteres */
+                    fin = index;
+                    textoAVerificar = textoCompleto.substring(index);
+                }
+                else {
+                    fin = fin + 1;
+                    index = fin;
+                }
+                // System.out.println("verificar => " + textoCompleto.substring(inicio, fin));
+                setStyleStrings(inicio, fin, indexCursor);
+            }
+            else
+                index++;
+        }
+    }
     /**
      * Asigna un respectivo estilo a una cadena según los índices
      * @param indexInicioPalabra
@@ -276,6 +329,27 @@ public class DefaultStyleDocumentPHP extends DefaultStyledDocument{
             attribute = attribNormal;
         setCharacterAttributes(indexInicioPalabra + suma, indexFinPalabra - indexInicioPalabra, attribute, false);
     }
+    /**
+     * Asigna un respectivo estilo a una cadena según los índices
+     * @param indexInicioPalabra
+     * @param indexFinPalabra
+     * @param texto 
+     */
+    private void setStyleStrings(int indexInicioPalabra, int indexFinPalabra, int indexCursor) throws BadLocationException {
+        String textoCompleto = getText(0, getLength());
+        int suma = ToolsEditor.getCantidadTabsLinea(textoCompleto, indexCursor) > 0 ? 1 : 0;
+        suma = 0;
+        AttributeSet attribute = null;
+
+        if (textoCompleto.substring(indexInicioPalabra, indexFinPalabra).trim().contains("'")) // ^ caracter para inicio, $ caracter para final
+            attribute = attribString;
+        // else if (textoCompleto.substring(indexInicioPalabra, indexFinPalabra).matches("^/\\*(.*|./\\r\\n.*|.*\\r.*|.*\\n.*)\\*/$")) { // ^ caracter para inicio, $ caracter para final
+        else if (textoCompleto.substring(indexInicioPalabra, indexFinPalabra).contains("\""))
+            attribute = attribString;
+        else
+            attribute = attribNormal;
+        setCharacterAttributes(indexInicioPalabra + suma, indexFinPalabra - indexInicioPalabra, attribute, false);
+    }
 
     @Override
     public void insertString(int indexCursor, String textoIngresado, AttributeSet a) throws BadLocationException {
@@ -291,10 +365,11 @@ public class DefaultStyleDocumentPHP extends DefaultStyledDocument{
         // SINTAXIS
         // if (textoIngresado.length() > 1) {
             estilizarCodigo(indexCursor, textoIngresado);
-
+            estilizarCodigoStrings(indexCursor);
             if (ToolsEditor.existComment(textoCompleto)) {
                 estilizarCodigoComment(indexCursor);
             }
+            
         /*} // descomentar esto ñuego para que no sea muy lento el programa al escribir (Añade los atributos por cada typeo sin ese if)
         else{
             estilizarCodigo2(indexCursor);

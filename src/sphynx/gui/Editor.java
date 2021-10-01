@@ -1,6 +1,7 @@
 package sphynx.gui;
 
 import java.awt.Color;
+import javax.swing.UIManager;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.text.AttributeSet;
@@ -25,16 +26,17 @@ public class Editor extends javax.swing.JFrame {
         setLocationRelativeTo(null);
         NumeroLinea numberLine = new NumeroLinea(txtContentEditor);
         scrollEditorPane.setRowHeaderView(numberLine);
+        // scrollEditorPane.getVerticalScrollBar().setUI(new UIScrollBar());
         
         CustomFont cf = new CustomFont();
         txtContentEditor.setFont(cf.ubuntuMonoSpace(1, 14f));
         txtContentEditor.setDocument(new DefaultStyleDocumentPHP());
         
-        // Lo siguiente es un auxiliar para que el tabulador tenga un espacio pequeño (En este caso 30, para cada espacio)
+        // Lo siguiente es un auxiliar para que el tabulador tenga un espacio pequeño (En este caso 32, equivalente a 4 espacios)
         StyleContext sc = StyleContext.getDefaultStyleContext();
         TabStop[] arrTabs = new TabStop[1000];
         for (int i = 0; i < 1000; i++)
-            arrTabs[i] = new TabStop((i + 1) * 30, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+            arrTabs[i] = new TabStop((i + 1) * 32, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
         AttributeSet paraSet = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.TabSet, new TabSet(arrTabs));
         txtContentEditor.setParagraphAttributes(paraSet, false);
         
@@ -73,6 +75,7 @@ public class Editor extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jTabbedPane1 = new javax.swing.JTabbedPane();
         scrollEditorPane = new javax.swing.JScrollPane();
         txtContentEditor = new javax.swing.JTextPane();
 
@@ -88,15 +91,17 @@ public class Editor extends javax.swing.JFrame {
         });
         scrollEditorPane.setViewportView(txtContentEditor);
 
+        jTabbedPane1.addTab("tab1", scrollEditorPane);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(scrollEditorPane, javax.swing.GroupLayout.DEFAULT_SIZE, 563, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 885, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(scrollEditorPane, javax.swing.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 575, Short.MAX_VALUE)
         );
 
         pack();
@@ -105,26 +110,39 @@ public class Editor extends javax.swing.JFrame {
     private void txtContentEditorKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtContentEditorKeyPressed
         if (evt.getKeyCode() == 10) {
             if (txtContentEditor.getCaretPosition() > 0) {
-                int numTabs = ToolsEditor.getCantidadTabsLinea(txtContentEditor.getText(), txtContentEditor.getCaretPosition());
-                String tabs = ToolsEditor.repeatText("\t", numTabs);
-
+//                System.out.println("position " + (txtContentEditor.getCaretPosition()));
+                inyectarTexto("\n");
+                txtContentEditor.setCaretPosition(txtContentEditor.getCaretPosition() + 1);
+                
                 // Hay que eliminar los saltos para hacer un correcto calculo de la posición del cursor
                 String textSinSaltos = txtContentEditor.getText().replaceAll("\n", "");
+
+                int numTabs = ToolsEditor.getCantidadTabsLinea(textSinSaltos, txtContentEditor.getCaretPosition(), true);
+                String tabs = ToolsEditor.repeatText("\t", numTabs);
+//                System.out.println("Los tabs " + numTabs);
+
+                
                 if (txtContentEditor.getText().length() > 0) {
-                    if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '{' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == '}') {
-                        inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
+                    if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 2) == '{' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == '}') {
+                        inyectarTexto(tabs + "\t\n" + tabs, numTabs);
                         evt.consume();
                     }
-                    else if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '[' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == ']') {
-                        inyectarTexto("\n" + tabs + "\t\n" + tabs, numTabs);
+                    else if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 2) == '[' && textSinSaltos.charAt(txtContentEditor.getCaretPosition()) == ']') {
+                        inyectarTexto(tabs + "\t\n" + tabs, numTabs);
                         evt.consume();
                     }
+                    
                     /*else { // Si el enter se dá en un lugar que no sea al medio de un caracter de apertura y cierre
                         // if (textSinSaltos.charAt(txtContentEditor.getCaretPosition() - 1) == '\t')
                         System.out.println("llega ver: " + numTabs);
                         inyectarTexto("\n" + tabs, -numTabs);
                         evt.consume();
                     }*/
+                    else {
+                        inyectarTexto(tabs, numTabs);
+                        txtContentEditor.setCaretPosition(txtContentEditor.getText().substring(0, txtContentEditor.getCaretPosition() + 1).length() + numTabs);
+                        evt.consume();
+                    }
                 }
             }
         }
@@ -225,6 +243,7 @@ public class Editor extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JScrollPane scrollEditorPane;
     private javax.swing.JTextPane txtContentEditor;
     // End of variables declaration//GEN-END:variables
